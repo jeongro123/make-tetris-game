@@ -1,145 +1,246 @@
-const canvas = document.getElementById("canvas1");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("tetris"); //DOM에서 canvas 엘리먼트 참조
+const ctx = canvas.getContext("2d"); //엘리먼트의 컨텍스트(렌더링될 그리기의 대상)
 
-var paddleHeight = 10;
-var paddleWidth = 75;
-var paddleX = (canvas.width - paddleWidth) / 2;
+const scale = 20;
+ctx.scale(scale, scale);
 
-var x = canvas.width / 2;
-var y = canvas.height - 30;
-var dx = 2;
-var dy = -2;
-var ballRadius = 10;
+const tWidth = canvas.width / scale;
+const tHeight = canvas.height / scale;
 
-var rightPressed = false;
-var leftPressed = false;
-var upPressed = false;
-var downPressed = false;
+const pieces = [
+  [
+    [1, 1],
+    [1, 1],
+  ],
+  [
+    [0, 2, 0, 0],
+    [0, 2, 0, 0],
+    [0, 2, 0, 0],
+    [0, 2, 0, 0],
+  ],
+  [
+    [0, 0, 0],
+    [3, 3, 0],
+    [0, 3, 3],
+  ],
+  [
+    [0, 0, 0],
+    [0, 4, 4],
+    [4, 4, 0],
+  ],
+  [
+    [5, 0, 0],
+    [5, 0, 0],
+    [5, 5, 0],
+  ],
+  [
+    [0, 0, 6],
+    [0, 0, 6],
+    [0, 6, 6],
+  ],
+  [
+    [0, 0, 0],
+    [7, 7, 7],
+    [0, 7, 0],
+  ],
+];
+const colors = [
+  null,
+  "#FF0D72",
+  "#0DC2FF",
+  "#0DFF72",
+  "#F538FF",
+  "#FF8E0D",
+  "#FFE138",
+  "#3877FF",
+];
+let arena = [];
 
-document.addEventListener("keydown", keyDownHandler, false);
-document.addEventListener("keyup", keyUpHandler, false);
+let rand;
 
-function keyDownHandler(e) {
-  //키 눌렀을때
-  if (e.keyCode == 39) {
-    rightPressed = true;
-  } else if (e.keyCode == 37) {
-    leftPressed = true;
-  } else if (e.keyCode == 38) {
-    upPressed = true;
-  } else if (e.keyCode == 40) {
-    downPressed = true;
-  }
-}
+const player = {
+  pos: { x: 0, y: 1 },
+  matrix: null,
+  color: null,
+};
 
-function keyUpHandler(e) {
-  //키에서 손 떼었을때
-  if (e.keyCode == 39) {
-    rightPressed = false;
-  } else if (e.keyCode == 37) {
-    leftPressed = false;
-  } else if (e.keyCode == 38) {
-    upPressed = false;
-  } else if (e.keyCode == 40) {
-    downPressed = false;
-  }
-}
+rand = Math.floor(Math.random() * pieces.length);
+player.matrix = pieces[rand];
+player.color = colors[rand + 1];
 
-// mino
-function drawImino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawOmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawZmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawSmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawJmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawLmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawTmino() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
-  ctx.fill();
-  ctx.closePath();
-}
-
-var score = 0;
-function drawScore() {
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#0095DD";
-  ctx.fillText("Score: " + score, 8, 20);
-}
-
-function drawNextMino() {}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBall();
-  drawPaddle();
-  drawScore();
-  if (y + dy < ballRadius) {
-    dy = -dy;
-  }
-  if (y + dy > canvas.height - ballRadius) {
-    if (x > paddleX && x < paddleX + paddleWidth) {
-      dy = -dy;
-    } else {
-      alert("GAME OVER");
-      window.location.reload();
+function drawMatrix(matrix, x, y) {
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = 0; j < matrix[i].length; j++) {
+      if (matrix[i][j]) {
+        ctx.fillRect(x + j, y + i, 1, 1);
+      }
     }
   }
-  if (x + dx < ballRadius) {
-    dx = -dx;
+}
+
+function rotateMatrix(matrix, dir) {
+  let newMatrix = [];
+
+  for (let i in matrix) newMatrix.push([]);
+
+  if (dir === 1) {
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < matrix[i].length; j++) {
+        newMatrix[j][matrix.length - i - 1] = matrix[i][j];
+      }
+    }
+  } else {
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < matrix[i].length; j++) {
+        newMatrix[matrix.length - j - 1][i] = matrix[i][j];
+      }
+    }
   }
-  if (x + dx > canvas.height - ballRadius) {
-    dx = -dx;
+
+  return newMatrix;
+}
+
+function collides(player, arena) {
+  for (let i = 0; i < player.matrix.length; i++) {
+    for (let j = 0; j < player.matrix[i].length; j++) {
+      if (
+        player.matrix[i][j] &&
+        arena[player.pos.y + i + 1][player.pos.x + j + 1]
+      ) {
+        return 1;
+      }
+    }
   }
-  x += dx;
-  y += dy;
-  if (rightPressed && paddleX < canvas.width - paddleWidth) {
-    paddleX += 7;
-  } else if (leftPressed && paddleX > 0) {
-    paddleX -= 7;
+
+  return 0;
+}
+
+function mergeArena(matrix, x, y) {
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = 0; j < matrix[i].length; j++) {
+      arena[y + i + 1][x + j + 1] = arena[y + i + 1][x + j + 1] || matrix[i][j];
+    }
   }
 }
 
-setInterval(draw, 10);
+function clearBlocks() {
+  for (let i = 1; i < arena.length - 2; i++) {
+    let clear = 1;
+
+    for (let j = 1; j < arena[i].length - 1; j++) {
+      if (!arena[i][j]) clear = 0;
+    }
+
+    if (clear) {
+      let r = new Array(tWidth).fill(0);
+      r.push(1);
+      r.unshift(1);
+
+      arena.splice(i, 1);
+      arena.splice(1, 0, r);
+    }
+  }
+}
+
+function drawArena() {
+  for (let i = 1; i < arena.length - 2; i++) {
+    for (let j = 1; j < arena[i].length - 1; j++) {
+      if (arena[i][j]) {
+        ctx.fillStyle = colors[arena[i][j]];
+        ctx.fillRect(j - 1, i - 1, 1, 1);
+      }
+    }
+  }
+}
+
+function initArena() {
+  arena = [];
+
+  const r = new Array(tWidth + 2).fill(1);
+  arena.push(r);
+
+  for (let i = 0; i < tHeight; i++) {
+    let row = new Array(tWidth).fill(0);
+    row.push(1);
+    row.unshift(1);
+
+    arena.push(row);
+  }
+
+  arena.push(r);
+  arena.push(r);
+}
+
+function gameOver() {
+  for (let j = 1; j < arena[1].length - 1; j++) {
+    if (arena[1][j]) {
+      return initArena();
+    }
+  }
+  return;
+}
+
+let interval = 1000;
+let lastTime = 0;
+let count = 0;
+
+function update(time = 0) {
+  const dt = time - lastTime;
+  lastTime = time;
+  count += dt;
+
+  if (count >= interval) {
+    player.pos.y++;
+    count = 0;
+  }
+
+  if (collides(player, arena)) {
+    mergeArena(player.matrix, player.pos.x, player.pos.y - 1);
+    clearBlocks();
+    gameOver();
+
+    player.pos.y = 1;
+    player.pos.x = 0;
+
+    rand = Math.floor(Math.random() * pieces.length);
+    player.matrix = pieces[rand];
+    player.color = colors[rand + 1];
+
+    interval = 1000;
+  }
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawArena();
+  ctx.fillStyle = player.color;
+  drawMatrix(player.matrix, player.pos.x, player.pos.y);
+
+  requestAnimationFrame(update);
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.keyCode === 37 && interval - 1) {
+    player.pos.x--;
+    if (collides(player, arena)) {
+      player.pos.x++;
+    }
+  } else if (event.keyCode === 39 && interval - 1) {
+    player.pos.x++;
+    if (collides(player, arena)) {
+      player.pos.x--;
+    }
+  } else if (event.keyCode === 40) {
+    player.pos.y++;
+    // count = 0;
+    interval = 1; //수직강하
+  } else if (event.keyCode === 38) {
+    player.matrix = rotateMatrix(player.matrix, 1);
+    if (collides(player, arena)) {
+      player.matrix = rotateMatrix(player.matrix, -1);
+    }
+  }
+});
+
+initArena();
+update();
