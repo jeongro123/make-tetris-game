@@ -1,12 +1,13 @@
 const canvas = document.getElementById("tetris"); //DOM에서 canvas 엘리먼트 참조
-const ctx = canvas.getContext("2d"); //엘리먼트의 컨텍스트(렌더링될 그리기의 대상)
+const ctx = canvas.getContext("2d"); //엘리먼트의 컨텍스트(렌더링될 그리기의 대상) 선택
 
 const scale = 20;
-ctx.scale(scale, scale);
+ctx.scale(scale, scale); //x,y의 크기를 조정
 
-const tWidth = canvas.width / scale;
-const tHeight = canvas.height / scale;
+const tWidth = canvas.width / scale; //220 / 20 = 11
+const tHeight = canvas.height / scale; //400 / 20 = 20
 
+//테트리스 블럭 모양
 const pieces = [
   [
     [1, 1],
@@ -44,6 +45,7 @@ const pieces = [
     [0, 7, 0],
   ],
 ];
+//테트리스 블럭 색상
 const colors = [
   null,
   "#FF0D72",
@@ -54,42 +56,50 @@ const colors = [
   "#FFE138",
   "#3877FF",
 ];
-let arena = [];
+let arena = []; //테트리스 맵
 
 let rand;
 
 const player = {
-  pos: { x: 0, y: 1 },
-  matrix: null,
-  color: null,
+  //내려오는 테트리스 블록
+  pos: { x: 0, y: 1 }, //좌우 위치
+  matrix: null, //블록
+  color: null, //색상
 };
 
-rand = Math.floor(Math.random() * pieces.length);
-player.matrix = pieces[rand];
-player.color = colors[rand + 1];
+rand = Math.floor(Math.random() * pieces.length); //전체 테트리스 블록 중에 랜덤으로 뽑음 / 배열이므로 Math.floor
+player.matrix = pieces[rand]; //랜덤으로 블록 할당
+player.color = colors[rand + 1]; //랜덤으로 색상 할당 / 블록과 색상의 배열index가 같으므로, 항상 블록의 모양과 색상이 일치함
 
 function drawMatrix(matrix, x, y) {
+  //블록 그리는 함수
   for (let i = 0; i < matrix.length; i++) {
+    //i는 블록한줄
     for (let j = 0; j < matrix[i].length; j++) {
+      //j는 i의 한칸한칸 / 테트리스 블록은 배열안에 배열들로 이루어져 있으므로 이중for문이 필요
       if (matrix[i][j]) {
-        ctx.fillRect(x + j, y + i, 1, 1);
+        //블록이 있으면
+        ctx.fillRect(x + j, y + i, 1, 1); //블록 그려주기(x좌표,y좌표,width,height) / x+j는 좌우의 위치를 고려해서 블록을 그려줘야 하기 때문. y+i는 높이를 고려해서 블록을 그려줘야 하기 때문
       }
     }
   }
 }
 
 function rotateMatrix(matrix, dir) {
-  let newMatrix = [];
+  //블록 회전시키는 함수
+  let newMatrix = []; //회전된(변형된) 블록이 들어갈 빈배열
 
-  for (let i in matrix) newMatrix.push([]);
+  for (let i in matrix) newMatrix.push([]); //!matrix의 요소수(i갯수)만큼 빈배열을 생성해 놓는다
 
   if (dir === 1) {
+    //
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
-        newMatrix[j][matrix.length - i - 1] = matrix[i][j];
+        newMatrix[j][matrix.length - i - 1] = matrix[i][j]; //
       }
     }
   } else {
+    //
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
         newMatrix[matrix.length - j - 1][i] = matrix[i][j];
