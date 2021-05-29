@@ -86,20 +86,20 @@ function drawMatrix(matrix, x, y) {
 }
 
 function rotateMatrix(matrix, dir) {
-  //블록 회전시키는 함수
+  //블록을 회전시키는 함수
   let newMatrix = []; //회전된(변형된) 블록이 들어갈 빈배열
 
   for (let i in matrix) newMatrix.push([]); //!matrix의 요소수(i갯수)만큼 빈배열을 생성해 놓는다
 
   if (dir === 1) {
-    //
+    //블록을 그대로 둠
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
         newMatrix[j][matrix.length - i - 1] = matrix[i][j]; //
       }
     }
   } else {
-    //
+    //블록을 회전시킴(반시계방향으로)
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
         newMatrix[matrix.length - j - 1][i] = matrix[i][j];
@@ -107,13 +107,17 @@ function rotateMatrix(matrix, dir) {
     }
   }
 
-  return newMatrix;
+  return newMatrix; //회전된 블록 반환
 }
 
 function collides(player, arena) {
+  //바닥충격감지
   for (let i = 0; i < player.matrix.length; i++) {
+    //
     for (let j = 0; j < player.matrix[i].length; j++) {
+      //
       if (
+        //맵에서 내려오는 블록의 y값(pos.y)+블록의 높이(i)+1   과    맵에서 내려오는 블록의 x값(pos.x)+블록의 너비(j)+1 한 위치에 '이미쌓인블록'이 있을때
         player.matrix[i][j] &&
         arena[player.pos.y + i + 1][player.pos.x + j + 1]
       ) {
@@ -126,15 +130,18 @@ function collides(player, arena) {
 }
 
 function mergeArena(matrix, x, y) {
+  //내려오는 블록 기존맵에 합치기
   for (let i = 0; i < matrix.length; i++) {
     for (let j = 0; j < matrix[i].length; j++) {
-      arena[y + i + 1][x + j + 1] = arena[y + i + 1][x + j + 1] || matrix[i][j];
+      arena[y + i + 1][x + j + 1] = arena[y + i + 1][x + j + 1] || matrix[i][j]; //기존맵에 1(블록)이 안채워진곳에 내려오는블록 지정해주기
     }
   }
 }
 
 function clearBlocks() {
+  //행이 꽉차면 0으로 초기화
   for (let i = 1; i < arena.length - 2; i++) {
+    //맵을 감싼 부분을 제외하고 반복문을 돈다
     let clear = 1;
 
     for (let j = 1; j < arena[i].length - 1; j++) {
@@ -153,44 +160,53 @@ function clearBlocks() {
 }
 
 function drawArena() {
+  //맵 그려주기
   for (let i = 1; i < arena.length - 2; i++) {
+    //행(높이)
     for (let j = 1; j < arena[i].length - 1; j++) {
+      //열(너비)
       if (arena[i][j]) {
-        ctx.fillStyle = colors[arena[i][j]];
-        ctx.fillRect(j - 1, i - 1, 1, 1);
+        //1~7블록 중 1개의 숫자가 있는 경우(즉, 블록이 있는경우)
+        ctx.fillStyle = colors[arena[i][j]]; //블록의 색상(블록모양과 블록색상의 index가 같으므로)
+        ctx.fillRect(j - 1, i - 1, 1, 1); //블록채우기
       }
     }
   }
 }
 
 function initArena() {
+  //맨처음 맵 초기화 //!맵의 바깥 4면을 1로 감싸줘서 충격감지 가능하도록
   arena = [];
 
-  const r = new Array(tWidth + 2).fill(1);
-  arena.push(r);
+  const r = new Array(tWidth + 2).fill(1); //맵의넓이보다 2만큼 크게 1로 채운다 -> roof(맵의 위에 지붕)
+  arena.push(r); //맵에 push
 
   for (let i = 0; i < tHeight; i++) {
-    let row = new Array(tWidth).fill(0);
-    row.push(1);
-    row.unshift(1);
+    //맵의높이만큼 반복문
+    let row = new Array(tWidth).fill(0); //맵 안에 각 행을 맵의너비만큼 0으로 채운다
+    row.push(1); //1을 보내서 맵의 오른쪽을 감싼다
+    row.unshift(1); //1을 보내서 맵의 왼쪽을 감싼다
 
-    arena.push(row);
+    arena.push(row); //맵에 push
   }
 
-  arena.push(r);
-  arena.push(r);
+  arena.push(r); //맵의 바닥에 1로 가득 채운다
+  arena.push(r); //맵의 바닥에 1로 가득 채운다
 }
 
 function gameOver() {
+  //맵의 높이만큼 블록이 차면 게임종료
   for (let j = 1; j < arena[1].length - 1; j++) {
+    //양옆에 감싼부분 제외하고 반복문을 돈다
     if (arena[1][j]) {
-      return initArena();
+      //맵안의 맨 윗줄에 블록이 있는경우
+      return initArena(); //맵을 default로 초기화 한다
     }
   }
   return;
 }
 
-let interval = 1000;
+let interval = 1000; //1초 간격으로
 let lastTime = 0;
 let count = 0;
 
@@ -230,24 +246,32 @@ function update(time = 0) {
 }
 
 document.addEventListener("keydown", (event) => {
+  1;
   if (event.keyCode === 37 && interval - 1) {
-    player.pos.x--;
+    //왼쪽화살표키
+    player.pos.x--; //내려오는 블록을 왼쪽으로 한칸 이동
     if (collides(player, arena)) {
-      player.pos.x++;
+      //충돌한 경우
+      player.pos.x++; //맵안으로 밀어내기
     }
   } else if (event.keyCode === 39 && interval - 1) {
-    player.pos.x++;
+    //오른쪽화살표키
+    player.pos.x++; //내려오는 블록을 오른쪽으로 한칸 이동
     if (collides(player, arena)) {
-      player.pos.x--;
+      //충돌한경우
+      player.pos.x--; //맵안으로 밀어내기
     }
   } else if (event.keyCode === 40) {
-    player.pos.y++;
+    //아래쪽화살표키
+    // player.pos.y++;//내려오는 블록을 아랫쪽으로 한칸 이동
     // count = 0;
-    interval = 1; //수직강하
+    interval = 1; //!수직강하
   } else if (event.keyCode === 38) {
-    player.matrix = rotateMatrix(player.matrix, 1);
+    //위쪽화살표키
+    player.matrix = rotateMatrix(player.matrix, 1); //회전한 블록을 -> 내려오는 블록에 할당
     if (collides(player, arena)) {
-      player.matrix = rotateMatrix(player.matrix, -1);
+      //충돌한경우
+      player.matrix = rotateMatrix(player.matrix, -1); //회전못하게함
     }
   }
 });
