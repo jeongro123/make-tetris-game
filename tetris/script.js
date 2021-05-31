@@ -72,7 +72,7 @@ player.matrix = pieces[rand]; //랜덤으로 블록 할당
 player.color = colors[rand + 1]; //랜덤으로 색상 할당 / 블록과 색상의 배열index가 같으므로, 항상 블록의 모양과 색상이 일치함
 
 function drawMatrix(matrix, x, y) {
-  //블록 그리는 함수
+  //내려오는 블록 그려주기
   for (let i = 0; i < matrix.length; i++) {
     //i는 블록한줄
     for (let j = 0; j < matrix[i].length; j++) {
@@ -92,14 +92,14 @@ function rotateMatrix(matrix, dir) {
   for (let i in matrix) newMatrix.push([]); //!matrix의 요소수(i갯수)만큼 빈배열을 생성해 놓는다
 
   if (dir === 1) {
-    //블록을 그대로 둠
+    //블록을 시계방향으로 회전시킴
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
         newMatrix[j][matrix.length - i - 1] = matrix[i][j]; //
       }
     }
   } else {
-    //블록을 회전시킴(반시계방향으로)
+    //블록을 회전시킴(반시계방향으로) -> 맵의 양 옆 벽에 부딪혔을 때 블록을 그대로 유지하게 함!
     for (let i = 0; i < matrix.length; i++) {
       for (let j = 0; j < matrix[i].length; j++) {
         newMatrix[matrix.length - j - 1][i] = matrix[i][j];
@@ -139,28 +139,29 @@ function mergeArena(matrix, x, y) {
 }
 
 function clearBlocks() {
-  //행이 꽉차면 0으로 초기화
+  //행이 꽉차면 0으로 초기화해주는 함수
   for (let i = 1; i < arena.length - 2; i++) {
     //맵을 감싼 부분을 제외하고 반복문을 돈다
     let clear = 1;
 
     for (let j = 1; j < arena[i].length - 1; j++) {
-      if (!arena[i][j]) clear = 0;
+      if (!arena[i][j]) clear = 0; //행에서 0(빈곳)이 하나라도 있으면 clear=0
     }
 
     if (clear) {
-      let r = new Array(tWidth).fill(0);
-      r.push(1);
-      r.unshift(1);
+      //행에 0이 하나도 없으면
+      let r = new Array(tWidth).fill(0); //행 0으로 초기화
+      r.push(1); //맵왼쪽에 1
+      r.unshift(1); //맵오른쪽에 1
 
-      arena.splice(i, 1);
-      arena.splice(1, 0, r);
+      arena.splice(i, 1); //맵의 i번째 삭제
+      arena.splice(1, 0, r); //!맵의 맨위에 r을 그려줌
     }
   }
 }
 
 function drawArena() {
-  //맵 그려주기
+  //기존에 쌓인 블록 그리고, 색 입혀주기
   for (let i = 1; i < arena.length - 2; i++) {
     //행(높이)
     for (let j = 1; j < arena[i].length - 1; j++) {
@@ -175,7 +176,7 @@ function drawArena() {
 }
 
 function initArena() {
-  //맨처음 맵 초기화 //!맵의 바깥 4면을 1로 감싸줘서 충격감지 가능하도록
+  //맨처음 맵 초기화 -> 맵의 바깥 4면을 1로 감싸주는 기능 //!맵의 바깥 4면을 1로 감싸줘서 충격감지 가능하도록
   arena = [];
 
   const r = new Array(tWidth + 2).fill(1); //맵의넓이보다 2만큼 크게 1로 채운다 -> roof(맵의 위에 지붕)
@@ -206,47 +207,52 @@ function gameOver() {
   return;
 }
 
-let interval = 1000; //1초 간격으로
+let interval = 1000; //1초 간격(고정값)
 let lastTime = 0;
 let count = 0;
+//https://stackoverflow.com/questions/50311887/what-exactly-is-the-argument-in-requestanimationframe-callback
+//requestAnimationFrame()안에 //* performance.now()가 있기 때문에 time=0으로 시작했어도 interval까지 counting이 되는것 같다
 
 function update(time = 0) {
-  const dt = time - lastTime;
+  //실시간 진행상황 업데이트
+  const dt = time - lastTime; //dt = delta time
   lastTime = time;
   count += dt;
 
   if (count >= interval) {
-    player.pos.y++;
-    count = 0;
+    //count가 인터벌 이상이 되면
+    player.pos.y++; //내려올 블록의 y값을 올려서 블록을 한칸 내려준다
+    count = 0; //count를 초기화해준다
   }
 
   if (collides(player, arena)) {
-    mergeArena(player.matrix, player.pos.x, player.pos.y - 1);
-    clearBlocks();
-    gameOver();
+    //충돌감지가 되었을때
+    mergeArena(player.matrix, player.pos.x, player.pos.y - 1); //그 블록을 기존맵에 합치고
+    clearBlocks(); //행이 꽉찼다면 블록을 터뜨리고
+    gameOver(); //열이 꽉찼다면 게임종료
 
-    player.pos.y = 1;
-    player.pos.x = 0;
+    player.pos.y = 1; //위치값 초기화
+    player.pos.x = 0; //위치값 초기화
 
     rand = Math.floor(Math.random() * pieces.length);
-    player.matrix = pieces[rand];
-    player.color = colors[rand + 1];
+    player.matrix = pieces[rand]; //블록 랜덤초기화
+    player.color = colors[rand + 1]; //색상 초기화
 
-    interval = 1000;
+    interval = 1000; //인터벌 초기화
   }
 
   ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height); //맵 검은배경 색상 채우기
 
-  drawArena();
-  ctx.fillStyle = player.color;
-  drawMatrix(player.matrix, player.pos.x, player.pos.y);
+  drawArena(); //게임진행상황 불러오기
 
-  requestAnimationFrame(update);
+  ctx.fillStyle = player.color; //색상 지정해주고
+  drawMatrix(player.matrix, player.pos.x, player.pos.y); //내려오는 블록 정의하기
+
+  requestAnimationFrame(update); //브라우저에게 수행하기를 원하는 애니메이션을 알리고 -> 다음 리페인트가 진행되기 전에 해당 애니메이션을 업데이트하는 함수를 호출
 }
 
 document.addEventListener("keydown", (event) => {
-  1;
   if (event.keyCode === 37 && interval - 1) {
     //왼쪽화살표키
     player.pos.x--; //내려오는 블록을 왼쪽으로 한칸 이동
@@ -276,5 +282,5 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-initArena();
-update();
+initArena(); //"계속" 맵의 바깥부분의 경계에 충돌을 감지할 수 있어야 하므로
+update(); //"계속" 업데이트 해줘야 하므로
